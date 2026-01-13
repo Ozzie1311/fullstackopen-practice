@@ -16,8 +16,10 @@ const requestLogger = (req, res, next) => {
 const errorHandler = (error, req, res, next) => {
   console.log(error.message)
 
-  if (error.message === 'CastError') {
+  if (error.name === 'CastError') {
     return res.status(400).send({ error: 'malformatted id' })
+  } else if (error.name === 'ValidationError') {
+    return res.status(400).json({ error: error.message })
   }
 
   next(error)
@@ -42,7 +44,7 @@ app.get('/api/notes', (req, res) => {
 })
 
 //Create note
-app.post('/api/notes', (req, res) => {
+app.post('/api/notes', (req, res, next) => {
   const body = req.body
 
   if (!body.content || !body.important) {
@@ -54,9 +56,12 @@ app.post('/api/notes', (req, res) => {
     important: body.important || false,
   })
 
-  note.save().then((savedNote) => {
-    res.json(savedNote)
-  })
+  note
+    .save()
+    .then((savedNote) => {
+      res.json(savedNote)
+    })
+    .catch((error) => next(error))
 })
 
 //Get a single note
@@ -82,7 +87,7 @@ app.put('/api/notes/:id', (req, res, next) => {
     important,
   }
 
-  Note.findByIdAndUpdate(id, newNote, { new: true })
+  Note.findByIdAndUpdate(id, newNote, { new: true, runValidators: true, context: 'query' })
     .then((updatedNote) => {
       res.json(updatedNote)
     })
