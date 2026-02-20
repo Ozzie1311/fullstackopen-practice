@@ -1,0 +1,47 @@
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import Togglable from './Togglable'
+import { beforeEach, expect } from 'vitest'
+
+describe('<Togglable />', () => {
+  let container
+  const style = 'display: none'
+
+  beforeEach(() => {
+    container = render(
+      <Togglable buttonLabel='show...'>
+        <div className='testDiv'>togglable content</div>
+      </Togglable>,
+    ).container
+  })
+
+  test('renders its children', async () => {
+    await screen.findAllByText('togglable content')
+  })
+
+  test('at start the children are not displayed', () => {
+    const div = container.querySelector('.togglableContent')
+    expect(div).toHaveStyle(style)
+  })
+
+  test('after clicking the button, children are displayed', async () => {
+    const user = userEvent.setup()
+    const button = screen.getByText('show...')
+    await user.click(button)
+
+    const div = container.querySelector('.togglableContent')
+    expect(div).not.toHaveStyle(style)
+  })
+
+  test('toggled content can be closed', async () => {
+    const user = userEvent.setup()
+    const button = screen.getByText('show...')
+    await user.click(button)
+
+    const closeButton = screen.getByText('cancel')
+    await user.click(closeButton)
+
+    const div = container.querySelector('.togglableContent')
+    expect(div).toHaveStyle(style)
+  })
+})
